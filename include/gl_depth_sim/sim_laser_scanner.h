@@ -52,6 +52,7 @@ class SimLaserScanner
 {
 public:
   SimLaserScanner(const LaserScannerProperties& properties);
+  SimLaserScanner(const LaserScannerProperties& properties, const std::string& name);
 
   /**
    * @brief Renders a laser scan from the input pose

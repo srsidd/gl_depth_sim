@@ -2,6 +2,8 @@
 #include <ros/ros.h>
 #include <pluginlib/class_loader.h>
 
+#include <GLFW/glfw3.h>
+
 class Simulator
 {
 public:
@@ -58,6 +60,7 @@ public:
     for (auto &render_plugin : render_plugins_)
     {
       render_plugin->render(scene_update_plugin_->getScene());
+//      glfwWaitEvents();
     }
   }
 

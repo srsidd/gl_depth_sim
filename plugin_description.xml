@@ -11,14 +11,14 @@
          type="gl_depth_sim::DepthCameraPlugin"
          base_class_type="gl_depth_sim::RenderPlugin">
     <description>
-      Render plugin for a 3D depth camera
+      Render plugin for a 3D depth camera that uses TF to provide the location of the camera
     </description>
   </class>
   <class name="gl_depth_sim/LaserScannerPlugin"
          type="gl_depth_sim::LaserScannerPlugin"
          base_class_type="gl_depth_sim::RenderPlugin">
     <description>
-      Render plugin for a 2D laser scanner
+      Render plugin for a 2D laser scanner that uses TF to provide the location of the scanner
     </description>
   </class>
 </library>

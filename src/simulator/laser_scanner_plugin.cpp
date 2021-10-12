@@ -25,7 +25,7 @@ void LaserScannerPlugin::init(const XmlRpc::XmlRpcValue& config)
   props_.min_range = static_cast<double>(config["min_range"]);
   props_.angular_resolution = static_cast<double>(config["angular_resolution"]);
 
-  sim_ = std::make_unique<SimLaserScanner>(props_);
+  sim_ = std::make_unique<SimLaserScanner>(props_, scanner_frame_);
 
   std::string topic_name = static_cast<std::string>(config["topic"]);
   ros::NodeHandle nh;

@@ -5,9 +5,14 @@
 
 namespace gl_depth_sim
 {
-SimLaserScanner::SimLaserScanner(const LaserScannerProperties &props)
+SimLaserScanner::SimLaserScanner(const LaserScannerProperties& props)
+  : SimLaserScanner(props, "gl_depth_sim")
+{
+}
+
+SimLaserScanner::SimLaserScanner(const LaserScannerProperties &props, const std::string& name)
   : camera_properties_(props.createCameraProperties())
-  , camera_(camera_properties_)
+  , camera_(camera_properties_, name)
 {
 }
 

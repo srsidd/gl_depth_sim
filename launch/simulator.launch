@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="simulator" pkg="gl_depth_sim" type="gl_depth_sim_simulator" output="screen">
+    <rosparam>
+      scene_update_rate: 60.0
+      render_rate: 30.0
+      scene_update_plugin:
+        type: "gl_depth_sim/ROSURDFSceneUpdaterPlugin"
+        params: []
+      render_plugins:
+        - type: "gl_depth_sim/LaserScannerPlugin"
+          params:
+            topic: "laser_scan_lower"
+            fixed_frame: "base_link"
+            camera_frame: "lower_scanner_lidar_scan"
+            min_range: 0.1
+            max_range: 10.0
+            angular_resolution: 0.001
+<!--        - type: "gl_depth_sim/DepthCameraPlugin"
+          params:
+            topic: "cloud"
+            fixed_frame: "base_link"
+            camera_frame: "wrist_camera"
+            width: 352
+            height: 264
+            z_near: 0.870
+            z_far: 10.0
+            fx: 352.0
+            fy: 352.0
+            cx: 176.0
+            cy: 132.0-->
+<!--        - type: "gl_depth_sim/DepthCameraPlugin"
+          params:
+            topic: "detailed_cloud"
+            fixed_frame: "base_link"
+            camera_frame: "detailed_scanner_optical_link"
+            width: 352
+            height: 264
+            z_near: 0.870
+            z_far: 10.0
+            fx: 352.0
+            fy: 352.0
+            cx: 176.0
+            cy: 132.0-->
+<!--        - type: "gl_depth_sim/LaserScannerPlugin"
+          params:
+            topic: "laser_scan_lower"
+            fixed_frame: "base_link"
+            camera_frame: "lower_scanner_lidar_scan"
+            min_range: 0.1
+            max_range: 10.0
+            angular_resolution: 0.001-->
+<!--        - type: "gl_depth_sim/LaserScannerPlugin"
+          params:
+            topic: "laser_scan_upper"
+            fixed_frame: "base_link"
+            camera_frame: "upper_scanner_lidar_scan"
+            min_range: 0.1
+            max_range: 10.0
+            angular_resolution: 0.001-->
+    </rosparam>
+  </node>
+</launch>

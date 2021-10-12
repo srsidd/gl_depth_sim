@@ -43,6 +43,7 @@ public:
    * at a time.
    */
   SimDepthCamera(const CameraProperties& camera);
+  SimDepthCamera(const CameraProperties& camera, const std::string& name);
   ~SimDepthCamera();
 
   /**
@@ -70,8 +71,9 @@ private:
   void initGLFW();
   void createGLFramebuffer();
 
-  // Controls the starting and stopping of glfw - This MUST come before any objects containing
-  // opengl handles in this list.
+  const std::string name_;
+
+  /** @brief Controls the starting and stopping of glfw - This MUST come before any objects containing opengl handles in this list. */
   GlfwGuard guard_;
 
   // State information

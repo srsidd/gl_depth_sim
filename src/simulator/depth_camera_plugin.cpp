@@ -31,7 +31,7 @@ void DepthCameraPlugin::init(const XmlRpc::XmlRpcValue &config)
   props_.cx = static_cast<double>(config["cx"]);
   props_.cy = static_cast<double>(config["cy"]);
 
-  sim_ = std::make_unique<SimDepthCamera>(props_);
+  sim_ = std::make_unique<SimDepthCamera>(props_, camera_frame_);
 
   std::string topic_name = static_cast<std::string>(config["topic"]);
   ros::NodeHandle nh;
