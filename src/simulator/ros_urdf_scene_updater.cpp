@@ -3,12 +3,12 @@
 
 #include <parallel/algorithm>
 #include <regex>
-#include <ros/package.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2/exceptions.h>
-#include <urdf/model.h>
+#include <fstream>
 
-const static double TIMEOUT = 3.0;
+const static int TIMEOUT = 3;
 const static std::string URDF_PARAM = "robot_description";
 
 namespace
@@ -21,7 +21,7 @@ bool resolveURI(const std::string& in, const std::string& uri, std::string& out)
     std::smatch matches;
     std::regex_search(in, matches, expression);
 
-    out = ros::package::getPath(matches[1].str());
+    out = ament_index_cpp::get_package_share_directory(matches[1].str());
     out += matches[2].str();
 
     return true;
@@ -47,31 +47,31 @@ Eigen::Isometry3d poseURDFToEigen(const urdf::Pose& pose)
 namespace gl_depth_sim
 {
 ROSURDFSceneUpdaterPlugin::ROSURDFSceneUpdaterPlugin()
-  : SceneUpdaterPlugin()
-  , buffer_()
+  : node_(std::make_shared<rclcpp::Node>("URDF_scene_updater"))
+  , clock_(std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME))
+  , buffer_(clock_)
   , listener_(buffer_)
 {
 }
 
-void ROSURDFSceneUpdaterPlugin::init(const XmlRpc::XmlRpcValue &)
+void ROSURDFSceneUpdaterPlugin::init(const YAML::Node &config)
 {
+  std::string urdf_fp = config["urdf_file_path"].as<std::string>();
+  if (!model_.initFile(urdf_fp))
+  {
+    throw std::runtime_error("Failed to parse urdf file");
+  }
+  RCLCPP_INFO(node_->get_logger(),"Successfully parsed urdf file");
 }
 
 void ROSURDFSceneUpdaterPlugin::createScene(/*gl_depth_sim::SimDepthCamera &sim_*/)
 {
-  urdf::Model model;
-  if (!model.initParam(URDF_PARAM))
-  {
-    throw std::runtime_error("Failed to parse urdf file");
-  }
-  ROS_INFO("Successfully parsed urdf file");
-
-  fixed_frame_ = model.getRoot()->name;
+  fixed_frame_ = model_.getRoot()->name;
 
   // Iterate through all of the links and add the visual geometries
-  for (auto it = model.links_.begin(); it != model.links_.end(); it++)
+  for (auto it = model_.links_.begin(); it != model_.links_.end(); it++)
   {
-    const auto& link = model.getLink(it->first);
+    const auto& link = model_.getLink(it->first);
 
     // Only include links with geometry
     if (link && link->visual_array.size() > 0)
@@ -123,7 +123,7 @@ void ROSURDFSceneUpdaterPlugin::createScene(/*gl_depth_sim::SimDepthCamera &sim_
           }
           default:
             // TODO: add support for geometry primitives
-            ROS_WARN_STREAM("Visual geometry other than meshes are not currently handled");
+            RCLCPP_WARN(node_->get_logger(), "Visual geometry other than meshes are not currently handled");
             break;
         }
       }
@@ -153,8 +153,8 @@ void ROSURDFSceneUpdaterPlugin::createScene(/*gl_depth_sim::SimDepthCamera &sim_
       }
 
       // Get the object's position relative to the fixed frame
-      geometry_msgs::TransformStamped mesh_transform =
-          buffer_.lookupTransform(fixed_frame_, link->name, ros::Time(0), ros::Duration(TIMEOUT));
+      geometry_msgs::msg::TransformStamped mesh_transform =
+          buffer_.lookupTransform(fixed_frame_, link->name, tf2::TimePointZero, tf2::Duration(std::chrono::seconds(TIMEOUT)));
       Eigen::Isometry3d pose = tf2::transformToEigen(mesh_transform);
 
       // Post-multiply the pose of the relative transform of the mesh points to its origin
@@ -167,24 +167,23 @@ void ROSURDFSceneUpdaterPlugin::createScene(/*gl_depth_sim::SimDepthCamera &sim_
       object.pose = pose * relative_pose;
 
       scene_.emplace(link->name, object);
-
-      ROS_DEBUG_STREAM("Added mesh for link '" << link->name << "'");
+      RCLCPP_DEBUG_STREAM(node_->get_logger(), "Added mesh for link '" << link->name << "'");
     }
   }
 }
 
-void ROSURDFSceneUpdaterPlugin::updateScene()
+void ROSURDFSceneUpdaterPlugin::updateScene(const rclcpp::Time time)
 {
   // Create a function that updates the position of each renderable object
-  auto update_fn = [this](std::pair<const std::string, RenderableObjectState> &pair) -> void {
+  auto update_fn = [this, time](std::pair<const std::string, RenderableObjectState> &pair) -> void {
     // Look up the transform to the object
-    geometry_msgs::TransformStamped transform;
+    geometry_msgs::msg::TransformStamped transform;
     try
     {
       transform = buffer_.lookupTransform(fixed_frame_,
                                           pair.first,
-                                          ros::Time(0),
-                                          ros::Duration(TIMEOUT));
+                                          time,
+                                          tf2::Duration(std::chrono::seconds(TIMEOUT)));
 
       Eigen::Isometry3d pose = tf2::transformToEigen(transform);
 
@@ -193,7 +192,7 @@ void ROSURDFSceneUpdaterPlugin::updateScene()
     }
     catch (tf2::TransformException &ex)
     {
-      ROS_ERROR_STREAM(ex.what());
+      RCLCPP_ERROR_STREAM(node_->get_logger(), ex.what());
     }
   };
 
@@ -205,4 +204,5 @@ void ROSURDFSceneUpdaterPlugin::updateScene()
 }  // namespace amsted_vision_processing
 
 #include <pluginlib/class_list_macros.h>
+//#include <class_loader/register_macro.hpp>
 PLUGINLIB_EXPORT_CLASS(gl_depth_sim::ROSURDFSceneUpdaterPlugin, gl_depth_sim::SceneUpdaterPlugin);

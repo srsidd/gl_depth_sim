@@ -1,67 +1,62 @@
+#include <rclcpp/rclcpp.hpp>
+#include <thread>
+
 #include <gl_depth_sim/simulator/simulator_plugins.h>
-#include <ros/ros.h>
-#include <pluginlib/class_loader.h>
+#include <pluginlib/class_loader.hpp>
+#include <gl_depth_sim/simulator/depth_camera_plugin.h>
+#include <gl_depth_sim/simulator/laser_scanner_plugin.h>
+#include <gl_depth_sim/simulator/ros_urdf_scene_updater.h>
 
 #include <GLFW/glfw3.h>
+#include <yaml-cpp/yaml.h>
 
-class Simulator
+using namespace std::chrono_literals;
+
+class Simulator : public rclcpp::Node
 {
 public:
-  Simulator(const XmlRpc::XmlRpcValue &scene_update_plugin_config,
-            const XmlRpc::XmlRpcValue &render_plugins_config,
-            const double scene_update_rate = 30.0,
-            const double render_rate = 30.0)
-    : scene_update_plugin_loader_("gl_depth_sim", "gl_depth_sim::SceneUpdaterPlugin")
+  Simulator()
+    : Node("gl_depth_simulation")
+    , scene_update_plugin_loader_("gl_depth_sim", "gl_depth_sim::SceneUpdaterPlugin")
     , render_plugin_loader_("gl_depth_sim", "gl_depth_sim::RenderPlugin")
   {
-    scene_update_plugin_ = scene_update_plugin_loader_.createInstance(
-      static_cast<std::string>(scene_update_plugin_config["type"]));
+    this->declare_parameter("config_file_path");
+    this->declare_parameter("urdf_file_path");
 
-    scene_update_plugin_->init(scene_update_plugin_config["params"]);
+    std::string yaml_config_fp = this->get_parameter("config_file_path").as_string();
+    YAML::Node yaml_config = YAML::LoadFile(yaml_config_fp);
 
-    // Load the render plugins
-    for (int i = 0; i < render_plugins_config.size(); ++i)
-    {
-      XmlRpc::XmlRpcValue config = render_plugins_config[i];
-      auto plugin = render_plugin_loader_.createInstance(static_cast<std::string>(config["type"]));
-      plugin->init(config["params"]);
-      render_plugins_.push_back(plugin);
-    }
+    double render_rate = yaml_config["render_rate"].as<double>();
+
+    std::string scene_plugin_type = yaml_config["scene_update_plugin"]["type"].as<std::string>();
+
+    auto render_plugin = yaml_config["render_plugins"];
+
+    scene_update_plugin_ = scene_update_plugin_loader_.createSharedInstance(scene_plugin_type);
+
+    YAML::Node scene_plugin_params = yaml_config["scene_update_plugin"]["params"];
+    YAML::Node urdf_file_path_yaml;
+    std::string urdf_fp = this->get_parameter("urdf_file_path").as_string();
+    urdf_file_path_yaml["urdf_file_path"] = urdf_fp;
+    scene_update_plugin_->init(urdf_file_path_yaml);
+
+    render_plugin_ = render_plugin_loader_.createSharedInstance(render_plugin["type"].as<std::string>());
+    render_plugin_->init(render_plugin["params"]);
 
     // Create the scene
     scene_update_plugin_->createScene();
 
-    // Create (but don't start) a timer for the updates
-    ros::NodeHandle nh;
-    scene_timer_ = nh.createTimer(ros::Rate(scene_update_rate), &Simulator::sceneTimerCallback, this, false, false);
-    render_timer_ = nh.createTimer(ros::Rate(render_rate), &Simulator::renderTimerCallback, this, false, false);
-  }
-
-  void start()
-  {
-    scene_timer_.start();
-    render_timer_.start();
-  }
-
-  void stop()
-  {
-    render_timer_.stop();
-    scene_timer_.stop();
+    // Create a timer for the updates
+    render_timer_ = this->create_wall_timer(rclcpp::Rate(render_rate).period(), std::bind(&Simulator::renderTimerCallback, this));
   }
 
   private:
-  void sceneTimerCallback(const ros::TimerEvent &)
-  {
-    scene_update_plugin_->updateScene(/*sim_*/);
-  }
 
-  void renderTimerCallback(const ros::TimerEvent &)
+  void renderTimerCallback()
   {
-    for (auto &render_plugin : render_plugins_)
-    {
-      render_plugin->render(scene_update_plugin_->getScene());
-//      glfwWaitEvents();
-    }
+      auto now = this->get_clock()->now();
+      scene_update_plugin_->updateScene(now);
+    render_plugin_->render(scene_update_plugin_->getScene(), now);
   }
 
   pluginlib::ClassLoader<gl_depth_sim::SceneUpdaterPlugin> scene_update_plugin_loader_;
@@ -69,54 +64,17 @@ public:
 
   gl_depth_sim::SceneUpdaterPlugin::Ptr scene_update_plugin_;
   std::vector<gl_depth_sim::RenderPlugin::Ptr> render_plugins_;
+  gl_depth_sim::RenderPlugin::Ptr render_plugin_;
 
-  ros::Timer scene_timer_;
-  ros::Timer render_timer_;
+  rclcpp::TimerBase::SharedPtr scene_timer_;
+  rclcpp::TimerBase::SharedPtr render_timer_;
 };
-
-template<typename T>
-T get(const ros::NodeHandle &nh, const std::string &key)
-{
-  T val;
-  if (!nh.getParam(key, val))
-  {
-    throw std::runtime_error("Failed to get '" + key + "' parameter");
-  }
-
-  return val;
-}
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "gl_depth_simulation");
-  ros::NodeHandle pnh("~");
-
-  sleep(3.0);
-
-  try
-  {
-    // Load the plugin configurations
-    XmlRpc::XmlRpcValue scene_update_plugin_config
-      = get<XmlRpc::XmlRpcValue>(pnh, "scene_update_plugin");
-    XmlRpc::XmlRpcValue render_plugins_config = get<XmlRpc::XmlRpcValue>(pnh, "render_plugins");
-
-    // Load the publish rate
-    double scene_update_rate = get<double>(pnh, "scene_update_rate");
-    double render_update_rate = get<double>(pnh, "render_rate");
-
-    // Create the simulation
-    Simulator sim(scene_update_plugin_config, render_plugins_config, scene_update_rate, render_update_rate);
-
-    // Start the simulator
-    ROS_INFO_STREAM("Starting the simulator");
-    sim.start();
-    ros::spin();
-  }
-  catch (const std::exception &ex)
-  {
-    ROS_ERROR_STREAM(ex.what());
-    return -1;
-  }
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<Simulator>());
+  rclcpp::shutdown();
 
   return 0;
 }

@@ -1,0 +1,23 @@
+#scene_update_rate: 60.0
+render_rate: 20.0
+scene_update_plugin:
+  type: "gl_depth_sim::ROSURDFSceneUpdaterPlugin"
+  params: ["no_params"]
+render_plugins:
+  type: "gl_depth_sim::DepthCameraPlugin"
+  params:
+    #topic: "camera"
+    pt_cloud_topic: "cloud"
+    depth_image_topic: "/sim/depth_registered/image"
+    color_image_topic: "/sim/rgb/camera_info"
+    camera_info_topic: "/sim/rgb/image_rect_color"
+    fixed_frame: "world"
+    camera_frame: "camera"
+    width: 640
+    height: 480
+    z_near: 0.001 #0.870
+    z_far: 0.6 #10.0
+    fx: 612.474
+    fy: 611.855
+    cx: 319.31
+    cy: 251.939

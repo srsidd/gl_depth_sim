@@ -1,42 +1,47 @@
 #include <gl_depth_sim/simulator/laser_scanner_plugin.h>
 
-#include <pcl_ros/point_cloud.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/point_cloud_conversion.hpp>
+
+#include <pcl_conversions/pcl_conversions.h>
 #include <tf2_eigen/tf2_eigen.h>
 
-const static double TIMEOUT = 3.0;
+const static int TIMEOUT = 3;
 static std::size_t SEQ = 0;
 
 namespace gl_depth_sim
 {
 
 LaserScannerPlugin::LaserScannerPlugin()
-  : listener_(buffer_)
+  : node_(std::make_shared<rclcpp::Node>("laser_scanner_node"))
+  , clock_(std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME))
+  , buffer_(clock_)
+  , listener_(buffer_)
 {
 
 }
 
-void LaserScannerPlugin::init(const XmlRpc::XmlRpcValue& config)
+void LaserScannerPlugin::init(const YAML::Node& config)
 {
-  fixed_frame_ = static_cast<std::string>(config["fixed_frame"]);
-  scanner_frame_ = static_cast<std::string>(config["camera_frame"]);
+  fixed_frame_ = config["fixed_frame"].as<std::string>();
+  scanner_frame_ = config["camera_frame"].as<std::string>();
 
-  props_.max_range = static_cast<double>(config["max_range"]);
-  props_.min_range = static_cast<double>(config["min_range"]);
-  props_.angular_resolution = static_cast<double>(config["angular_resolution"]);
+  props_.max_range = config["max_range"].as<double>();
+  props_.min_range = config["min_range"].as<double>();
+  props_.angular_resolution = config["angular_resolution"].as<double>();
 
   sim_ = std::make_unique<SimLaserScanner>(props_, scanner_frame_);
 
-  std::string topic_name = static_cast<std::string>(config["topic"]);
-  ros::NodeHandle nh;
-  pub_ = nh.advertise<sensor_msgs::PointCloud2>(topic_name, 1, true);
+  std::string topic_name = config["topic"].as<std::string>();
+  pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name, 1);
 }
 
-void LaserScannerPlugin::render(const std::map<std::string, RenderableObjectState>& scene)
+void LaserScannerPlugin::render(const std::map<std::string, RenderableObjectState>& scene,
+                                const rclcpp::Time time)
 {
   // Get camera tranform
-  geometry_msgs::TransformStamped scanner_transform
-      = buffer_.lookupTransform(fixed_frame_, scanner_frame_, ros::Time(0), ros::Duration(TIMEOUT));
+  geometry_msgs::msg::TransformStamped scanner_transform
+      = buffer_.lookupTransform(fixed_frame_, scanner_frame_, time, tf2::Duration(std::chrono::seconds(TIMEOUT)));
 
   Eigen::Isometry3d camera_pose = tf2::transformToEigen(scanner_transform);
 
@@ -44,12 +49,11 @@ void LaserScannerPlugin::render(const std::map<std::string, RenderableObjectStat
   pcl::PointCloud<pcl::PointXYZ> cloud = sim_->render(camera_pose, scene);
 
   // Publish the cloud
-  sensor_msgs::PointCloud2 msg;
+  sensor_msgs::msg::PointCloud2 msg;
   pcl::toROSMsg(cloud, msg);
   msg.header.frame_id = scanner_frame_;
-  msg.header.stamp = ros::Time::now();
-  msg.header.seq = SEQ++;
-  pub_.publish(msg);
+  msg.header.stamp = node_->get_clock()->now();
+  pub_->publish(msg);
 }
 
 }  // namespace gl_depth_sim

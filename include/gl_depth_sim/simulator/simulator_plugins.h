@@ -1,9 +1,11 @@
 #ifndef GL_DEPTH_SIM_SIMULATOR_SIMULATOR_PLUGINS_H
 #define GL_DEPTH_SIM_SIMULATOR_SIMULATOR_PLUGINS_H
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <gl_depth_sim/sim_depth_camera.h>
 
-#include <xmlrpcpp/XmlRpcValue.h>
+#include <yaml-cpp/yaml.h>
 #include <boost/shared_ptr.hpp>
 
 namespace gl_depth_sim
@@ -14,7 +16,7 @@ namespace gl_depth_sim
 class SceneUpdaterPlugin
 {
 public:
-  using Ptr = boost::shared_ptr<SceneUpdaterPlugin>;
+  using Ptr = std::shared_ptr<SceneUpdaterPlugin>;
   SceneUpdaterPlugin() = default;
   virtual ~SceneUpdaterPlugin() = default;
 
@@ -22,7 +24,7 @@ public:
    * @brief Initializes the plugin from an XMLRPC configuration
    * @param config
    */
-  virtual void init(const XmlRpc::XmlRpcValue& config) = 0;
+  virtual void init(const YAML::Node& config) = 0;
 
   /**
    * @brief Creates a scene with renderable objects
@@ -32,7 +34,7 @@ public:
   /**
    * @brief Updates the location of renderable objects within the scene
    */
-  virtual void updateScene() = 0;
+  virtual void updateScene(const rclcpp::Time time) = 0;
 
   /**
    * @brief Returns the representation of the scene
@@ -53,7 +55,7 @@ protected:
 class RenderPlugin
 {
 public:
-  using Ptr = boost::shared_ptr<RenderPlugin>;
+  using Ptr = std::shared_ptr<RenderPlugin>;
   RenderPlugin() = default;
   virtual ~RenderPlugin() = default;
 
@@ -61,13 +63,14 @@ public:
    * @brief Initializes the plugin with an XMLRPC configuration
    * @param config
    */
-  virtual void init(const XmlRpc::XmlRpcValue& config) = 0;
+  virtual void init(const YAML::Node& config) = 0;
 
   /**
    * @brief Renders the input scene
    * @param scene
    */
-  virtual void render(const std::map<std::string, RenderableObjectState>& scene) = 0;
+  virtual void render(const std::map<std::string, RenderableObjectState>& scene,
+                      const rclcpp::Time time) = 0;
 };
 
 }  // namespace gl_depth_sim
