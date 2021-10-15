@@ -54,8 +54,8 @@ public:
 
   void renderTimerCallback()
   {
-      auto now = this->get_clock()->now();
-      scene_update_plugin_->updateScene(now);
+    auto now = this->get_clock()->now();
+    scene_update_plugin_->updateScene(now);
     render_plugin_->render(scene_update_plugin_->getScene(), now);
   }
 
