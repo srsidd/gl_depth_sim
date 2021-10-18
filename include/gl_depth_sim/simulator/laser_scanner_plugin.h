@@ -4,6 +4,7 @@
 #include <gl_depth_sim/simulator/simulator_plugins.h>
 #include <gl_depth_sim/sim_laser_scanner.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace gl_depth_sim

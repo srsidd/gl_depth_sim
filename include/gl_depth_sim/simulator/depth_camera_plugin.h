@@ -5,6 +5,7 @@
 
 #include <gl_depth_sim/simulator/simulator_plugins.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>

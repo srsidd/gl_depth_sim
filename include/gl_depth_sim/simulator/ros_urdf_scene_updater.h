@@ -3,6 +3,7 @@
 
 #include <gl_depth_sim/simulator/simulator_plugins.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <urdf/model.h>

@@ -37,6 +37,7 @@ find_package(PCL REQUIRED)
 find_package(TinyXML2 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(Threads REQUIRED)
 
 # Extensions
 find_package(assimp REQUIRED) # Just used for loading models in mesh_loader.h
@@ -135,6 +136,7 @@ target_include_directories(${PROJECT_NAME}_orbit PUBLIC
 target_link_libraries(${PROJECT_NAME}_orbit
   ${PROJECT_NAME}
   ${PROJECT_NAME}_interfaces
+  Threads::Threads
   ${rclcpp_LIBRARIES}
 )
 
