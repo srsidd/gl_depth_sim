@@ -188,14 +188,15 @@ add_executable(${PROJECT_NAME}_simulator
 )
 target_include_directories(${PROJECT_NAME}_simulator PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include>"
+    "$<INSTALL_INTERFACE:include>")
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
     ${rclcpp_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${sensor_msgs_INCLUDE_DIRS}
     ${TinyXML2_INCLUDE_DIRS}
     ${pluginlib_INCLUDE_DIRS}
 )
-target_link_libraries(${PROJECT_NAME}_simulator
+target_link_libraries(${PROJECT_NAME}_simulator PUBLIC
   ${PROJECT_NAME}
   ${PROJECT_NAME}_interfaces
   ${PROJECT_NAME}_sim_laser_scanner
