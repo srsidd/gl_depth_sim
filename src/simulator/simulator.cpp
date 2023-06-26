@@ -1,8 +1,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <thread>
 
-#include <gl_depth_sim/simulator/simulator_plugins.h>
 #include <pluginlib/class_loader.hpp>
+#include <gl_depth_sim/simulator/simulator_plugins.h>
 #include <gl_depth_sim/simulator/depth_camera_plugin.h>
 #include <gl_depth_sim/simulator/laser_scanner_plugin.h>
 #include <gl_depth_sim/simulator/ros_urdf_scene_updater.h>
