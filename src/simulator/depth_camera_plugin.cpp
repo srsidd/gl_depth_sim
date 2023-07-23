@@ -113,5 +113,5 @@ void DepthCameraPlugin::render(const std::map<std::string, RenderableObjectState
 
 } // namespace gl_depth_sim
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(gl_depth_sim::DepthCameraPlugin, gl_depth_sim::RenderPlugin);
