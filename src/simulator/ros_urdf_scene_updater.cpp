@@ -203,6 +203,6 @@ void ROSURDFSceneUpdaterPlugin::updateScene(const rclcpp::Time time)
 
 }  // namespace amsted_vision_processing
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 //#include <class_loader/register_macro.hpp>
 PLUGINLIB_EXPORT_CLASS(gl_depth_sim::ROSURDFSceneUpdaterPlugin, gl_depth_sim::SceneUpdaterPlugin);
