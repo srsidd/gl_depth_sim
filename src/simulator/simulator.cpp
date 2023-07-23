@@ -20,8 +20,8 @@ public:
     , scene_update_plugin_loader_("gl_depth_sim", "gl_depth_sim::SceneUpdaterPlugin")
     , render_plugin_loader_("gl_depth_sim", "gl_depth_sim::RenderPlugin")
   {
-    this->declare_parameter("config_file_path");
-    this->declare_parameter("urdf_file_path");
+    this->declare_parameter<std::string>("config_file_path");
+    this->declare_parameter<std::string>("urdf_file_path");
 
     std::string yaml_config_fp = this->get_parameter("config_file_path").as_string();
     YAML::Node yaml_config = YAML::LoadFile(yaml_config_fp);
