@@ -58,5 +58,5 @@ void LaserScannerPlugin::render(const std::map<std::string, RenderableObjectStat
 
 }  // namespace gl_depth_sim
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(gl_depth_sim::LaserScannerPlugin, gl_depth_sim::RenderPlugin);
