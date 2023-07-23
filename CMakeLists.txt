@@ -168,7 +168,13 @@ target_include_directories(${PROJECT_NAME}_simulator_plugins PUBLIC
     ${rclcpp_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${sensor_msgs_INCLUDE_DIRS}
-    ${cv_bridge_INCLUDE_DIRS}
+)
+target_include_directories(${PROJECT_NAME}_simulator_plugins SYSTEM PUBLIC
+  ${cv_bridge_INCLUDE_DIRS}
+  ${tf2_ros_INCLUDE_DIRS}
+  ${tf2_eigen_INCLUDE_DIRS}
+  ${urdf_INCLUDE_DIRS}
+  ${pcl_conversions_INCLUDE_DIRS}
 )
 target_link_libraries(${PROJECT_NAME}_simulator_plugins
   ${rclcpp_LIBRARIES}
@@ -181,6 +187,7 @@ target_link_libraries(${PROJECT_NAME}_simulator_plugins
   ${urdf_LIBRARIES}
   ${tf2_ros_LIBRARIES}
   ${cv_bridge_LIBRARIES}
+  cv_bridge::cv_bridge
 )
 
 add_executable(${PROJECT_NAME}_simulator
@@ -193,7 +200,13 @@ target_include_directories(${PROJECT_NAME}_simulator PUBLIC
     ${PCL_INCLUDE_DIRS}
     ${sensor_msgs_INCLUDE_DIRS}
     ${TinyXML2_INCLUDE_DIRS}
-    ${pluginlib_INCLUDE_DIRS}
+)
+target_include_directories(${PROJECT_NAME}_simulator SYSTEM PUBLIC
+  ${rclcpp_INCLUDE_DIRS}
+  ${cv_bridge_INCLUDE_DIRS}
+  ${pluginlib_INCLUDE_DIRS}
+  ${tf2_ros_INCLUDE_DIRS}
+  ${urdf_INCLUDE_DIRS}
 )
 target_link_libraries(${PROJECT_NAME}_simulator
   ${PROJECT_NAME}
@@ -202,6 +215,10 @@ target_link_libraries(${PROJECT_NAME}_simulator
   ${rclcpp_LIBRARIES}
   ${TinyXML2_LIBRARIES}
   ${pluginlib_LIBRARIES}
+  ${tf2_ros_LIBRARIES}
+  cv_bridge::cv_bridge
+  pluginlib::pluginlib
+  tf2_ros::tf2_ros
   yaml-cpp
 )
 #target_compile_definitions(${PROJECT_NAME}_simulator PUBLIC PLUGINLIB__DISABLE_BOOST_FUNCTIONS)
